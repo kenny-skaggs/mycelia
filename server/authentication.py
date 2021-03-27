@@ -1,9 +1,12 @@
-from flask import Flask, redirect, url_for, request
+from flask import Flask, redirect, url_for, render_template, request
 from flask_login import LoginManager, login_required, login_user, logout_user
 import json
 from oauthlib.oauth2 import WebApplicationClient
 import os
 import requests
+
+from database import get_new_session
+from model import Account
 
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', None)
 GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', None)
@@ -15,13 +18,15 @@ oauth_client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 
 class AuthenticatedUser:
-    def __init__(self):
-        self.is_authenticated = True  # TODO: True if the user has been logged in (gave a correct password)
-        self.is_active = True  # TODO: True if the account is active and should be able to log in
+    def __init__(self, account: Account):
+        self.is_authenticated = True
+        self.is_active = account.active  # TODO: True if the account is active and should be able to log in
         self.is_anonymous = False  # todo: not logged in user (i think?)
 
+        self.account = account
+
     def get_id(self):
-        return u'user_identifier'  # todo: email or user id?
+        return self.account.user_id
 
 
 def _get_google_provider_config():
@@ -35,10 +40,11 @@ def init_auth_system(app: Flask):
 
     @login_manager.user_loader
     def load_user(user_id):
-        # TODO: find user based on identifier, or return none
-        return {'username': 'bob', 'id': user_id}
+        with get_new_session() as session:
+            account = session.query(Account).filter(Account.user_id == user_id).one_or_none()
+            return AuthenticatedUser(account) if account else None
 
-    @app.route('/login')
+    @app.route('/mycelia/login')
     def login():
         google_provider_cfg = _get_google_provider_config()
         auth_endpoint = google_provider_cfg['authorization_endpoint']
@@ -50,7 +56,7 @@ def init_auth_system(app: Flask):
         )
         return redirect(auth_request_url)
 
-    @app.route('/login/callback')
+    @app.route('/mycelia/login/callback')
     def login_callback():
         google_provider_config = _get_google_provider_config()
 
@@ -75,12 +81,19 @@ def init_auth_system(app: Flask):
         userinfo_response = requests.get(uri, headers=headers, data=body)
 
         email = userinfo_response.json()['email']
+        with get_new_session() as session:
+            account = session.query(Account).filter(Account.email == email).one_or_none()
+            if account is not None:
+                login_user(AuthenticatedUser(account))
+                return redirect(url_for('homepage'))
+            else:
+                return redirect(url_for('login_error', email=email))
 
-        # TODO: still need to set the logged in user and redirect to something
+    @app.route('/mycelia/login/error')
+    def login_error():
+        return render_template('login_error.html', title='Error', email=request.args.get('email'))
 
-        return 'callback'
-
-    @app.route('/logout')
+    @app.route('/mycelia/logout')
     @login_required
     def logout():
         logout_user()

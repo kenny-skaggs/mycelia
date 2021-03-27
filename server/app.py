@@ -14,11 +14,10 @@ if secret_key is None:
     secret_key = os.urandom(24)
 app.secret_key = secret_key
 
-
 init_auth_system(app)
 
 
-@app.route('/')
+@app.route('/mycelia')
 @login_required
 def homepage():
     return render_template('home.html', title='Home')
