@@ -29,3 +29,6 @@ if __name__ == '__main__':
     app.run(ssl_context='adhoc')
 
 # TODO: should be able to access routes with or without a trailing /
+#       login callback should still be referring to proxying server (not delta-cortex)
+#       refactor DB connection setup
+#       get logging set up to group log lines by request (like in rdr)
