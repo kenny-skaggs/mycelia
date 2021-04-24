@@ -6,12 +6,11 @@ import os
 import requests
 
 from database import get_new_session
+from datastore import Settings
 from model import Account
 
-GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', None)
-GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', None)
-if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:
-    raise Exception('Unable to load Google app credentials')
+GOOGLE_CLIENT_ID = Settings.get('GOOGLE_CLIENT_ID')
+GOOGLE_CLIENT_SECRET = Settings.get('GOOGLE_CLIENT_SECRET')
 
 GOOGLE_DISCOVERY_URL = 'https://accounts.google.com/.well-known/openid-configuration'
 oauth_client = WebApplicationClient(GOOGLE_CLIENT_ID)

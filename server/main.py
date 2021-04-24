@@ -7,6 +7,7 @@ from authentication import init_auth_system
 
 
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 
 secret_key = os.environ.get("MA_SECRET_KEY", None)
 if secret_key is None:
@@ -24,4 +25,7 @@ def homepage():
 
 
 if __name__ == '__main__':
-    app.run(ssl_context='adhoc')  # TODO: only use in dev
+    # This only runs in dev. GAE uses the entry point defined in app.yaml
+    app.run(ssl_context='adhoc')
+
+# TODO: should be able to access routes with or without a trailing /
