@@ -2,10 +2,9 @@ from flask import Flask, redirect, url_for, render_template, request
 from flask_login import LoginManager, login_required, login_user, logout_user
 import json
 from oauthlib.oauth2 import WebApplicationClient
-import os
 import requests
 
-from database import get_new_session
+import database
 from datastore import Settings
 from model import Account
 
@@ -39,7 +38,7 @@ def init_auth_system(app: Flask):
 
     @login_manager.user_loader
     def load_user(user_id):
-        with get_new_session() as session:
+        with database.Connection().get_new_session() as session:
             account = session.query(Account).filter(Account.user_id == user_id).one_or_none()
             return AuthenticatedUser(account) if account else None
 
@@ -80,7 +79,7 @@ def init_auth_system(app: Flask):
         userinfo_response = requests.get(uri, headers=headers, data=body)
 
         email = userinfo_response.json()['email']
-        with get_new_session() as session:
+        with database.Connection().get_new_session() as session:
             account = session.query(Account).filter(Account.email == email).one_or_none()
             if account is not None:
                 login_user(AuthenticatedUser(account))
