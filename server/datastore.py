@@ -24,13 +24,13 @@ class DatastoreSettings:
         with instance.client.context():
             setting = _DataStoreRecord.query(_DataStoreRecord.name == name).get()
             if not setting:
-                setting = _DataStoreRecord(name=name, value=instance.unset_value)
-                setting.put()
+                record = _DataStoreRecord(name=name, value=instance.unset_value)
+                record.put()
 
-            if setting.value == instance.unset_value:
+            if record.value == instance.unset_value:
                 raise Exception(f'Value for setting "{name}" has not been set yet.')
 
-            return setting.value
+            return record.value
 
 
 class _DataStoreRecord(ndb.Model):
